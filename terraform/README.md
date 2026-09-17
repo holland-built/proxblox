@@ -1,10 +1,10 @@
 # terraform/ — starts services on registered NIOS-X hosts
 
-Normally you don't run this directly: `../deploy-niosx.sh` and
-`../add-services.sh` drive it for you.
+Normally you don't run this directly: `../niosx deploy` and
+`../niosx add` drive it for you.
 
 It starts the services listed in `niosx_hosts.json` (gitignored, per-user,
-written by `add-services.sh`):
+written by `../niosx add`):
 
 ```json
 {

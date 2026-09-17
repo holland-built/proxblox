@@ -1,6 +1,6 @@
 # Handoff — NIOS-X on Proxmox tooling
 
-Status as of 2026-09-02. Repo: https://github.com/holland-built/niosx (public).
+Status as of 2026-09-02. Repo: https://github.com/holland-built/proxblox (public).
 
 ## What this is
 
@@ -105,7 +105,7 @@ Currently live: `sholland-203` running DNS + DHCP (`./niosx list` for its IP).
 | `/etc/niosx/last_vmid` (Proxmox) | never-reuse VMID counter |
 | `~/.config/niosx/teardown/<vmid>.json` | journal of a teardown in progress |
 | `~/.config/niosx/pending/<vmid>.json` | a node built with `--no-wait`, not yet finished |
-| `lib.sh` | shared validators (names, VMIDs, OWNER, CRLF) |
+| `scripts/lib.sh` | shared validators (names, VMIDs, OWNER, CRLF) |
 | `tests/` | stubbed suite; `./niosx test` |
 | `NIOSX_HOSTS_JSON` | points this script *and* Terraform (`TF_VAR_hosts_file`) at one hosts file — used by the tests |
 

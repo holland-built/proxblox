@@ -2,13 +2,13 @@
 # Read-only inventory: your Proxmox VMs, your Portal hosts, and your Terraform
 # services — and anything that appears in one but not the others.
 set -euo pipefail
-HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG=${NIOSX_CONFIG:-$HERE/config.env}
 [ -f "$CONFIG" ] || { echo "!! missing $CONFIG" >&2; exit 2; }
 # shellcheck source=/dev/null
 . "$CONFIG"
 # shellcheck source=/dev/null
-. "$HERE/lib.sh"
+. "$HERE/scripts/lib.sh"
 : "${PVE:?set PVE in config.env}"; : "${OWNER:?set OWNER in config.env}"
 niosx_check_no_cr PVE OWNER
 TF=$HERE/terraform; CSP=${CSP_URL:-https://csp.infoblox.com}
@@ -19,7 +19,7 @@ KEY=$(sed -nE 's/^[[:space:]]*infoblox_api_key[[:space:]]*=[[:space:]]*"(.*)"[[:
         "$SEC" 2>/dev/null | tail -1 | tr -d '\r' || true)
 
 echo "== Proxmox ($PVE) =="
-if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" bash -s -- "$OWNER" <<'EOS' 2>/dev/null
+if ! ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" "$PVE_SUDO bash -s" -- "$OWNER" <<'EOS' 2>/dev/null
 owner=$1
 for c in /etc/pve/qemu-server/*.conf; do
   [ -e "$c" ] || continue

@@ -6,6 +6,7 @@
 #   STUB_HALT=1      abort (99) at the first step that would change anything
 args="$*"
 log() { [ -n "${STUB_LOG:-}" ] && printf '%s\n' "$1" >> "$STUB_LOG"; return 0; }
+case "$args" in *" sudo -n "*) log "SSH-SUDO" ;; esac
 
 case "$args" in
   *last_vmid*"printf"*)   log "ALLOCATE"; echo "${STUB_NEXT_VMID:-205}"; exit 0 ;;

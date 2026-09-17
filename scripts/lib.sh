@@ -6,6 +6,14 @@
 # OWNER prefixes every object in a tenant shared by hundreds of people, and
 # VMID is used unquoted in remote qm commands.
 
+# Every remote command needs root on Proxmox. PVE="root@host" runs them
+# directly; any other login runs them through passwordless sudo.
+# shellcheck disable=SC2034  # used by the scripts that source this file
+case "${PVE:-}" in
+  root@*) PVE_SUDO="" ;;
+  *)      PVE_SUDO="sudo -n" ;;
+esac
+
 niosx_die() {
   echo "!! $1" >&2
   shift

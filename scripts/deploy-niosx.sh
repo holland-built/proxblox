@@ -35,7 +35,7 @@ usage() {
 Build a NIOS-X On-Prem VM on Proxmox, let it self-register to the Infoblox
 Portal, rename it, and start the services you pick. ~5-10 min, no console.
 
-  ./deploy-niosx.sh [--services LIST] [VMID] [NAME] [JOINTOKEN]
+  ./niosx deploy [--services LIST] [VMID] [NAME] [JOINTOKEN]
 
   --services LIST   e.g. dns,dhcp   (omit = prompt with your tenant's list)
   --services none   build the VM only, start nothing
@@ -61,7 +61,7 @@ HELPEOF
 case "${1:-}" in -h|--help) usage; exit 0 ;; esac
 
 # ---- environment: copy config.env.example -> config.env and fill it in ----
-HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG=${NIOSX_CONFIG:-$HERE/config.env}
 if [ ! -f "$CONFIG" ]; then
   echo "!! missing $CONFIG" >&2
@@ -77,7 +77,7 @@ fi
 : "${BRIDGE:?set BRIDGE in config.env}"
 : "${OWNER:?set OWNER in config.env (prefix for CSP object names)}"
 # shellcheck source=/dev/null
-. "$HERE/lib.sh"
+. "$HERE/scripts/lib.sh"
 niosx_check_no_cr PVE IMG POOL BRIDGE OWNER
 niosx_check_owner "$OWNER"
 RAM=${RAM:-4096}                                        # MB  (Infoblox floor = 4 GB)
@@ -287,12 +287,12 @@ fi
 NEED_IMAGE=1; NEED_CREATE=1; NEED_DISK=1; NEED_SEED=1; NEED_START=1
 
 if [ -n "$RESUME" ]; then
-  if ! EXIST=$(ssh "$PVE" "qm config $VMID" 2>/dev/null); then
+  if ! EXIST=$(ssh "$PVE" "$PVE_SUDO qm config $VMID" 2>/dev/null); then
     echo "!! VM $VMID does not exist on $PVE — there is nothing to resume." >&2
     echo "   Build a new one: ./niosx deploy" >&2; exit 1
   fi
   EX_NAME=$(printf '%s\n' "$EXIST" | sed -n 's/^name: //p')
-  EX_STAT=$(ssh "$PVE" "qm status $VMID" 2>/dev/null | awk '{print $2}')
+  EX_STAT=$(ssh "$PVE" "$PVE_SUDO qm status $VMID" 2>/dev/null | awk '{print $2}')
   HAS_SEED=0; case "$EXIST" in *"seed-niosx-$VMID.iso"*) HAS_SEED=1 ;; esac
   HAS_DISK=0; case "$EXIST" in *"scsi0:"*) HAS_DISK=1 ;; esac
 
@@ -341,7 +341,8 @@ fi
 # ---- allocate VMID: never-reuse high-water mark on the Proxmox host ----
 # (single-quoted remote script; $(), $(()) etc. evaluate ON the host)
 if [ -z "$VMID" ]; then
-  VMID=$(ssh "$PVE" '
+  # (no single quotes in here: it is wrapped in bash -c '...' for sudo)
+  VMID=$(ssh "$PVE" "$PVE_SUDO bash -c '"'
     mkdir -p /etc/niosx
     exec 9>/etc/niosx/.vmid.lock; flock 9          # serialize concurrent deploys
     last=$(cat /etc/niosx/last_vmid 2>/dev/null || echo 200)
@@ -351,7 +352,7 @@ if [ -z "$VMID" ]; then
     while qm status "$n" >/dev/null 2>&1; do n=$((n + 1)); done   # skip occupied ids
     printf "%s\n" "$n" > /etc/niosx/last_vmid
     printf "%s\n" "$n"
-  ')
+  '"'")
   echo ">> allocated VMID $VMID (high-water mark — freed ids never reused)"
 fi
 NAME=${NAME:-$OWNER-$VMID}
@@ -360,9 +361,9 @@ niosx_check_name "$NAME" "name"
 if [ -z "$RESUME" ]; then
   # If the caller pinned a VMID, say something useful *before* shipping the
   # image. (Auto-allocated ids already skip anything occupied.)
-  if EXIST=$(ssh "$PVE" "qm config $VMID" 2>/dev/null); then
+  if EXIST=$(ssh "$PVE" "$PVE_SUDO qm config $VMID" 2>/dev/null); then
     ex_name=$(printf '%s\n' "$EXIST" | sed -n 's/^name: //p')
-    ex_stat=$(ssh "$PVE" "qm status $VMID" 2>/dev/null | awk '{print $2}')
+    ex_stat=$(ssh "$PVE" "$PVE_SUDO qm status $VMID" 2>/dev/null | awk '{print $2}')
     echo "!! VMID $VMID is already in use: \"$ex_name\" ($ex_stat)" >&2
     if printf '%s\n' "$EXIST" | grep -q "seed-niosx-$VMID.iso"; then
       echo "   It was built by this tool. If it is a leftover from a failed run:" >&2
@@ -413,8 +414,8 @@ fi
 
 if [ "$NEED_IMAGE" = 1 ]; then
   echo ">> 1/6  Ship image local -> Proxmox"
-  ssh "$PVE" "mkdir -p $REMOTE"
-  rsync -aP "$IMG" "$PVE:$REMOTE/$BASENAME"
+  ssh "$PVE" "$PVE_SUDO mkdir -p $REMOTE"
+  rsync -aP ${PVE_SUDO:+--rsync-path="$PVE_SUDO rsync"} "$IMG" "$PVE:$REMOTE/$BASENAME"
 else
   echo ">> 1/6  image not needed (disk already imported) — skipped"
 fi
@@ -422,7 +423,7 @@ fi
 if [ "$NEED_CREATE" = 1 ]; then
   echo ">> 2/6  Build VM $VMID"
   # shellcheck disable=SC2087   # deliberate: these values are expanded locally
-  ssh "$PVE" bash -s <<EOF
+  ssh "$PVE" "$PVE_SUDO bash -s" <<EOF
 set -euo pipefail
 if qm status $VMID >/dev/null 2>&1; then
   echo "!! VMID $VMID appeared since the preflight check — aborting." >&2; exit 1
@@ -440,7 +441,7 @@ fi
 if [ "$NEED_DISK" = 1 ]; then
   echo ">> 3/6  Import disk (thin zvol on $POOL)"
   # shellcheck disable=SC2087   # deliberate: these values are expanded locally
-  ssh "$PVE" bash -s <<EOF
+  ssh "$PVE" "$PVE_SUDO bash -s" <<EOF
 set -euo pipefail
 qm importdisk $VMID "$REMOTE/$BASENAME" $POOL
 qm set $VMID --scsi0 $POOL:vm-$VMID-disk-0,discard=on,ssd=1
@@ -456,7 +457,7 @@ if [ -n "$JOINTOKEN" ]; then
   if [ "$NEED_SEED" = 1 ]; then
     echo ">> 4/6  Build cloud-init join seed + attach (auto-register to CSP)"
     # shellcheck disable=SC2087   # deliberate: these values are expanded locally
-  ssh "$PVE" bash -s <<EOF
+  ssh "$PVE" "$PVE_SUDO bash -s" <<EOF
 set -euo pipefail
 # an appliance that already booted without a seed will never read one: stop it
 if qm status $VMID 2>/dev/null | grep -q running; then
@@ -486,7 +487,7 @@ EOF
 
   if [ "$NEED_START" = 1 ]; then
     echo ">> 5/6  Start $VMID (leases DHCP, then registers to CSP)"
-    ssh "$PVE" "qm start $VMID"
+    ssh "$PVE" "$PVE_SUDO qm start $VMID"
     echo ">> VM $VMID starting + auto-registering."
   else
     echo ">> 5/6  VM $VMID already running — skipped"
@@ -509,13 +510,13 @@ json.dump({"vmid": vmid, "name": name,
     echo "   Finish it:   ./niosx check $VMID --finish"
   elif [ "$SERVICES" != "none" ]; then
     echo ">> 6/6  Adding services once it registers"
-    "$HERE/add-services.sh" "$VMID" "$NAME" "$SERVICES"
+    "$HERE/scripts/add-services.sh" "$VMID" "$NAME" "$SERVICES"
     echo ">> DONE. $NAME deployed and running: $SERVICES"
   else
     echo ">> DONE. VM started. Registration happens on its own (~2-3 min) - not verified here."
     echo "   Start some later: ./niosx add $VMID $NAME dns,dhcp"
   fi
 else
-  echo ">> 4/6  No join token given — VM built + STOPPED. Start with: qm start $VMID"
+  echo ">> 4/6  No join token given — VM built + STOPPED. Start with: ssh $PVE $PVE_SUDO qm start $VMID"
   echo ">> To join later: re-run with the token as arg3, or attach a seed manually (see README)."
 fi

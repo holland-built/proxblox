@@ -130,4 +130,20 @@ case("an image name with spaces still lands on Proxmox intact",
      setup=spacey_image, args=("--services", "none") + PIN,
      capture_has=['"/var/lib/vz/template/qcow/NIOS-X_OnPrem_v4.qcow2"'], log_has=["RSYNC"])
 
+# ---- the Proxmox login: root runs commands directly, anyone else via sudo ----
+def non_root_login(ws):
+    cfg = open(ws.config).read()
+    open(ws.config, "w").write(cfg.replace("root@stub-proxmox.invalid", "jsmith@stub-proxmox.invalid"))
+
+
+case("a non-root Proxmox login runs every remote command through sudo",
+     setup=non_root_login, args=("--services", "none") + PIN,
+     log_has=["SSH-SUDO", "RSYNC-SUDO", "REMOTE-SCRIPT", "QM-START"])
+case("a root Proxmox login does not use sudo",
+     args=("--services", "none") + PIN,
+     log_has=["REMOTE-SCRIPT", "QM-START"], log_hasnt=["SSH-SUDO", "RSYNC-SUDO"])
+case("a non-root login allocates the VMID through sudo",
+     setup=non_root_login, args=("--services", "none"), inputs=["", ""], env=HALT,
+     log_has=["SSH-SUDO", "ALLOCATE"])
+
 sys.exit(report())

@@ -49,4 +49,4 @@ case("out-of-range number is rejected",
 
 A green suite proves nothing on its own. Break the behaviour on purpose and
 confirm the test goes red — removing the name validation and unquoting
-`--name` in `deploy-niosx.sh` must fail six cases.
+`--name` in `scripts/deploy-niosx.sh` must fail six cases.

@@ -12,7 +12,7 @@ usage() {
   cat <<'HELPEOF'
 Destroy one NIOS-X node: services, Infoblox CSP host, and the Proxmox VM.
 
-  ./teardown-niosx.sh <vmid> [--label NAME] [--dry-run]
+  ./niosx teardown <vmid> [--label NAME] [--dry-run]
 
   --label NAME   host name, if it is not <OWNER>-<VMID> (needed when the VM
                  is already gone and cannot be matched by MAC)
@@ -27,13 +27,13 @@ HELPEOF
 
 case "${1:-}" in -h|--help) usage; exit 0 ;; esac
 
-HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG=${NIOSX_CONFIG:-$HERE/config.env}
 [ -f "$CONFIG" ] || { echo "!! missing $CONFIG" >&2; exit 2; }
 # shellcheck source=/dev/null
 . "$CONFIG"
 # shellcheck source=/dev/null
-. "$HERE/lib.sh"
+. "$HERE/scripts/lib.sh"
 niosx_check_no_cr PVE OWNER
 # shellcheck disable=SC2034  # read by niosx_die in lib.sh
 NIOSX_DIE_CODE=2          # this script uses 2 for "refused before changing anything"
@@ -114,12 +114,12 @@ NAME_NOTE=""
 VM_GONE=0
 ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" true >/dev/null 2>&1 \
   || { echo "!! cannot ssh to $PVE — refusing to guess whether VM $VMID exists" >&2; exit 2; }
-if VMCONF=$(ssh "$PVE" "qm config $VMID" 2>&1); then
+if VMCONF=$(ssh "$PVE" "$PVE_SUDO qm config $VMID" 2>&1); then
   VM_NAME=$(printf '%s\n' "$VMCONF" | sed -n 's/^name: //p')
   MAC=$(printf '%s\n' "$VMCONF" | sed -nE 's/^net0:.*virtio=([0-9A-Fa-f:]{17}).*/\1/p' | tr 'A-Z' 'a-z')
   VM_LOCK=$(printf '%s\n' "$VMCONF" | sed -n 's/^lock: //p')
   VM_ISO=$(printf '%s\n' "$VMCONF" | sed -n 's/^ide2: //p')
-  VM_STATUS=$(ssh "$PVE" "qm status $VMID" 2>/dev/null | awk '{print $2}') || VM_STATUS=unknown
+  VM_STATUS=$(ssh "$PVE" "$PVE_SUDO qm status $VMID" 2>/dev/null | awk '{print $2}') || VM_STATUS=unknown
   [ -n "$MAC" ] || { echo "!! could not read a net0 MAC for VM $VMID — refusing" >&2; exit 2; }
 elif printf '%s' "$VMCONF" | grep -q 'does not exist'; then
   VM_GONE=1; VM_NAME=""; MAC=""; VM_LOCK=""; VM_ISO=""; VM_STATUS="does not exist"
@@ -207,7 +207,7 @@ STATE_RES=$(printf '%s\n' "$STATE_ALL" | grep -E "^bloxone_infra_service\.svc\[\
 # nothing to do at all?
 if [ "$VM_GONE" = "1" ] && [ "$N_MATCH" = "0" ] && [ -z "$STATE_RES" ] && [ -z "$JSON_POOL" ]; then
   echo "Nothing to tear down for VMID $VMID / '$LABEL' — no VM, no Portal host, no services."
-  echo "If a seed ISO might remain: ssh $PVE rm -f /var/lib/vz/template/iso/seed-niosx-$VMID.iso"
+  echo "If a seed ISO might remain: ssh $PVE $PVE_SUDO rm -f /var/lib/vz/template/iso/seed-niosx-$VMID.iso"
   exit 0
 fi
 
@@ -327,8 +327,8 @@ fi
 # B. stop the VM BEFORE deleting the CSP record, so it cannot re-enrol
 if [ "$VM_GONE" = "0" ] && [ "$VM_STATUS" != "stopped" ]; then
   echo ">> stopping VM $VMID"
-  ssh "$PVE" "qm stop $VMID --timeout 60" >/dev/null 2>&1 || true
-  ssh "$PVE" "for i in \$(seq 1 30); do qm status $VMID | grep -q stopped && exit 0; sleep 2; done; exit 1" \
+  ssh "$PVE" "$PVE_SUDO qm stop $VMID --timeout 60" >/dev/null 2>&1 || true
+  ssh "$PVE" "$PVE_SUDO bash -c 'for i in \$(seq 1 30); do qm status $VMID | grep -q stopped && exit 0; sleep 2; done; exit 1'" \
     || { echo "!! VM did not stop; nothing deleted in the Portal" >&2; exit 3; }
 fi
 
@@ -345,19 +345,19 @@ fi
 # D. destroy the VM
 if [ "$VM_GONE" = "0" ]; then
   echo ">> destroying VM $VMID"
-  ssh "$PVE" "qm destroy $VMID --purge --destroy-unreferenced-disks 1" >/dev/null 2>&1 \
+  ssh "$PVE" "$PVE_SUDO qm destroy $VMID --purge --destroy-unreferenced-disks 1" >/dev/null 2>&1 \
     || { echo "!! qm destroy failed — run it by hand on $PVE" >&2; exit 3; }
 fi
 
 # E. secrets: the seed carries the join token
-if ! ssh "$PVE" "set -e; rm -f /var/lib/vz/template/iso/seed-niosx-$VMID.iso; rm -rf /tmp/niosx-seed-$VMID; test ! -e /var/lib/vz/template/iso/seed-niosx-$VMID.iso"; then
+if ! ssh "$PVE" "$PVE_SUDO bash -c 'set -e; rm -f /var/lib/vz/template/iso/seed-niosx-$VMID.iso; rm -rf /tmp/niosx-seed-$VMID; test ! -e /var/lib/vz/template/iso/seed-niosx-$VMID.iso'"; then
   echo "!! could not remove the seed for $VMID — IT CONTAINS YOUR JOIN TOKEN." >&2
-  echo "   Run: ssh $PVE 'rm -f /var/lib/vz/template/iso/seed-niosx-$VMID.iso; rm -rf /tmp/niosx-seed-$VMID'" >&2
+  echo "   Run: ssh $PVE $PVE_SUDO bash -c 'rm -f /var/lib/vz/template/iso/seed-niosx-$VMID.iso; rm -rf /tmp/niosx-seed-$VMID'" >&2
   exit 3
 fi
 
 # raise the never-reuse counter so a pinned VMID is retired too (monotonic)
-ssh "$PVE" "mkdir -p /etc/niosx; exec 9>/etc/niosx/.vmid.lock; flock 9; l=\$(cat /etc/niosx/last_vmid 2>/dev/null || echo 200); [ \"\$l\" -ge $VMID ] || echo $VMID > /etc/niosx/last_vmid" >/dev/null 2>&1 || true
+ssh "$PVE" "$PVE_SUDO bash -c 'mkdir -p /etc/niosx; exec 9>/etc/niosx/.vmid.lock; flock 9; l=\$(cat /etc/niosx/last_vmid 2>/dev/null || echo 200); [ \"\$l\" -ge $VMID ] || echo $VMID > /etc/niosx/last_vmid'" >/dev/null 2>&1 || true
 
 rm -f "$JOURNAL"
 echo

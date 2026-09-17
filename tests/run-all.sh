@@ -12,7 +12,7 @@ done
 
 if command -v shellcheck >/dev/null 2>&1; then
   echo "== shellcheck =="
-  shellcheck -S warning "$HERE/.."/*.sh "$HERE/../niosx" && echo "clean"
+  shellcheck -S warning "$HERE/../scripts"/*.sh "$HERE/../niosx" && echo "clean"
   echo
 else
   echo "== shellcheck == (not installed — skipped)"

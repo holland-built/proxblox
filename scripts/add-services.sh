@@ -8,13 +8,13 @@
 # is useless, and a shared tenant can hold far more hosts than one page.
 set -euo pipefail
 
-HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG=${NIOSX_CONFIG:-$HERE/config.env}
 [ -f "$CONFIG" ] || { echo "!! missing $CONFIG" >&2; exit 1; }
 # shellcheck source=/dev/null
 . "$CONFIG"
 # shellcheck source=/dev/null
-. "$HERE/lib.sh"
+. "$HERE/scripts/lib.sh"
 niosx_check_no_cr PVE
 
 VMID=${1:?usage: add-services.sh <vmid> <label> <services>}
@@ -58,7 +58,7 @@ else
 fi
 
 # MAC of the VM (explicit failure, not masked by pipefail)
-if ! VMCONF=$(ssh "$PVE" "qm config $VMID" 2>&1); then
+if ! VMCONF=$(ssh "$PVE" "$PVE_SUDO qm config $VMID" 2>&1); then
   echo "!! could not read config for VM $VMID on $PVE:" >&2
   printf '%s\n' "$VMCONF" >&2; exit 1
 fi

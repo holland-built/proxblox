@@ -61,7 +61,7 @@ def run(script, args=(), inputs=(), env_extra=None, ws=None, timeout=30):
     ws = ws or Workspace()
     try:
         master, slave = pty.openpty()
-        p = subprocess.Popen([os.path.join(REPO, script)] + list(args),
+        p = subprocess.Popen([os.path.join(REPO, "scripts", script)] + list(args),
                              stdin=slave, stdout=slave, stderr=slave,
                              env=ws.env(env_extra), cwd=REPO,
                              close_fds=True, preexec_fn=os.setsid)

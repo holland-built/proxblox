@@ -24,13 +24,13 @@ Nodes disappear from this list once their services are running.
 HELPEOF
 }
 
-HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CONFIG=${NIOSX_CONFIG:-$HERE/config.env}
 [ -f "$CONFIG" ] || { echo "!! missing $CONFIG" >&2; exit 2; }
 # shellcheck source=/dev/null
 . "$CONFIG"
 # shellcheck source=/dev/null
-. "$HERE/lib.sh"
+. "$HERE/scripts/lib.sh"
 niosx_check_no_cr PVE OWNER
 : "${PVE:?set PVE in config.env}"
 
@@ -69,9 +69,9 @@ EOF2
   found=1
 
   # 1. is the VM still there, and what is its MAC?
-  if VMCONF=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" "qm config $VMID" 2>/dev/null); then
+  if VMCONF=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" "$PVE_SUDO qm config $VMID" 2>/dev/null); then
     MAC=$(printf '%s\n' "$VMCONF" | sed -nE 's/^net0:.*virtio=([0-9A-Fa-f:]{17}).*/\1/p' | tr 'A-Z' 'a-z')
-    VMSTATE=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" "qm status $VMID" 2>/dev/null | awk '{print $2}')
+    VMSTATE=$(ssh -o BatchMode=yes -o ConnectTimeout=10 "$PVE" "$PVE_SUDO qm status $VMID" 2>/dev/null | awk '{print $2}')
   else
     MAC=""; VMSTATE="gone"
   fi
@@ -119,7 +119,7 @@ print("%s %s" % (h.get("display_name") or "?", h.get("ip_address") or "?"))' 2>/
   fi
   if [ "$FINISH" = 1 ]; then
     echo "        starting: $missing"
-    if "$HERE/add-services.sh" "$VMID" "$NAME" "$missing"; then
+    if "$HERE/scripts/add-services.sh" "$VMID" "$NAME" "$missing"; then
       rm -f "$rec"
       echo "        done — record cleared"
     else

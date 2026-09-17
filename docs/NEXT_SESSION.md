@@ -6,7 +6,7 @@ Paste everything in the block below into a new Claude Code session.
 
 ```
 Work on the NIOS-X on Proxmox tooling at ~/AI/HomeSystems/niosx
-(public repo: github.com/holland-built/niosx). Read HANDOFF.md and README.md first,
+(public repo: github.com/holland-built/proxblox). Read docs/HANDOFF.md and README.md first,
 then run ./niosx test (30s, touches nothing).
 
 WHAT IT IS
@@ -29,7 +29,7 @@ DONE AND VERIFIED LIVE
   tests/), which turned up a command injection through the Name prompt — a name of
   x;reboot ran `reboot` as root on the Proxmox host. Fixed, plus --resume, live
   service validation, tenant-wide name check, enforced OWNER, and the teardown
-  journal is finally read. See "Fixed on 2026-09-02" in HANDOFF.md.
+  journal is finally read. See "Fixed on 2026-09-02" in docs/HANDOFF.md.
 - 2026-09-02: built sholland-207/208/209 (dns), then added dhcp to all three.
   Four hosts are live now: 203, 207, 208, 209, all dns+dhcp. Next VMID 210.
   `./niosx add` was merging-not-replacing only after a fix — before it, adding
@@ -76,7 +76,7 @@ CONVENTIONS
 - Use OpenTofu (`tofu`), not terraform.
 - teardown is destructive: always --dry-run first. There is deliberately no --all
   and no --yes; --confirm "<exact host name>" is the scripted path.
-- Anything a user types (VMID, name, label) is validated in lib.sh before it can
+- Anything a user types (VMID, name, label) is validated in scripts/lib.sh before it can
   reach a root shell on Proxmox, a Portal record or a regex. Add new input there.
 - Every change to the scripts: run ./niosx test, and prove a new test fails when
   you break the behaviour on purpose. A green suite proves nothing by itself.
