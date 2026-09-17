@@ -153,10 +153,14 @@ a seed ISO that stays on the Proxmox host.
 <summary><b>Deploy options</b></summary>
 
 ```bash
-./niosx deploy                          # prompts for services
-./niosx deploy --services dns,dhcp      # no prompt
-./niosx deploy --services none          # build the VM only
-./niosx deploy 210 edge-dns             # pick the VMID and name
+# prompts for services
+./niosx deploy
+# no prompt
+./niosx deploy --services dns,dhcp
+# build the VM only
+./niosx deploy --services none
+# pick the VMID and name
+./niosx deploy 210 edge-dns
 ```
 
 The prompt lists the services your tenant offers, read live from
@@ -191,15 +195,19 @@ Most of a deploy is waiting. `--no-wait` gives you your shell back in about 2
 minutes, once the VM is running:
 
 ```bash
-./niosx deploy --services dns --no-wait     # run it as many times as you like
+# run it as many times as you like
+./niosx deploy --services dns --no-wait
 ```
 
 Each run leaves a note in `~/.config/niosx/pending/<vmid>.json`. Later:
 
 ```bash
-./niosx check                 # what happened to them?
-./niosx check --finish        # start services on any that have registered
-./niosx check 207 --finish    # just that one
+# what happened to them?
+./niosx check
+# start services on any that have registered
+./niosx check --finish
+# just that one
+./niosx check 207 --finish
 ```
 
 ```
@@ -227,8 +235,10 @@ with no join seed (it will never register on its own):
 ```
 
 ```bash
-./niosx deploy --resume 250                    # finish it
-./niosx deploy --resume 250 --services dns     # finish it and start services
+# finish it
+./niosx deploy --resume 250
+# finish it and start services
+./niosx deploy --resume 250 --services dns
 ```
 
 Resume checks what the VM already has and runs only the missing steps: import
@@ -246,8 +256,10 @@ in a terminal. There is no `--yes`.
 <summary><b>Teardown</b></summary>
 
 ```bash
-./niosx teardown <vmid> --dry-run    # show what would go, change nothing
-./niosx teardown <vmid>              # asks you to type the host name
+# show what would go, change nothing
+./niosx teardown <vmid> --dry-run
+# asks you to type the host name
+./niosx teardown <vmid>
 ```
 
 Teardown removes, in order: the host's services (through a Terraform plan it
@@ -295,10 +307,13 @@ wsl --install
 # all of this runs inside Ubuntu
 # install the tools the scripts use
 sudo apt update && sudo apt install -y git rsync python3 curl openssh-client
-# download OpenTofu's installer, run it, then delete it
+# download OpenTofu's official installer
 curl --proto '=https' --tlsv1.2 -fsSL https://get.opentofu.org/install-opentofu.sh -o install-opentofu.sh
+# allow the installer to run
 chmod +x install-opentofu.sh
+# install OpenTofu as a normal Ubuntu package
 sudo ./install-opentofu.sh --install-method deb
+# delete the installer, it is no longer needed
 rm -f install-opentofu.sh
 # make an SSH key and print it; give it to your Proxmox admin (see Proxmox login)
 ssh-keygen -t ed25519 && cat ~/.ssh/id_ed25519.pub
