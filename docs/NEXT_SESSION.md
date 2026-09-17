@@ -30,7 +30,7 @@ DONE AND VERIFIED LIVE
   x;reboot ran `reboot` as root on the Proxmox host. Fixed, plus --resume, live
   service validation, tenant-wide name check, enforced OWNER, and the teardown
   journal is finally read. See "Fixed on 2026-09-02" in docs/HANDOFF.md.
-- 2026-09-02: built jsmith-207/208/209 (dns), then added dhcp to all three.
+- 2026-09-02: built VMs 207, 208 and 209 (dns), then added dhcp to all three.
   Four hosts are live now: 203, 207, 208, 209, all dns+dhcp. Next VMID 210.
   `./niosx add` was merging-not-replacing only after a fix. Before it, adding
   dhcp would have destroyed each host's running dns on the next apply.

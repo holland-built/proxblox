@@ -32,7 +32,7 @@ Another removes all of it. Aimed at ~700 sales engineers sharing one CSP tenant.
 | **`./niosx add`** | live on VMs 207/208/209: added dhcp to hosts already running dns, `1 added, 0 changed, 0 destroyed` each time |
 | **`--no-wait` / `./niosx check`** | check run live against 207: read Proxmox, the Portal and Terraform state, saw both services up, cleared its own record |
 
-Currently live: `jsmith-203` running DNS + DHCP (`./niosx list` for its IP).
+Currently live: VM 203 (named `<OWNER>-203`) running DNS + DHCP (`./niosx list` for its IP).
 
 ## Hard-won facts (do not relearn these)
 
