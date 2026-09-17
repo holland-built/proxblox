@@ -5,7 +5,7 @@ Paste everything in the block below into a new Claude Code session.
 ---
 
 ```
-Work on the NIOS-X on Proxmox tooling at ~/AI/HomeSystems/niosx
+Work on the NIOS-X on Proxmox tooling at ~/proxblox
 (public repo: github.com/holland-built/proxblox). Read docs/HANDOFF.md and README.md first,
 then run ./niosx test (30s, touches nothing).
 
@@ -26,15 +26,15 @@ DONE AND VERIFIED LIVE
 - One host is currently live (see `./niosx list`) running DNS + DHCP. Leave it up.
 - Next VMID is 207 (never-reuse counter at /etc/niosx/last_vmid on the Proxmox host).
 - 2026-09-02: interactive path driven through a real pty at last (48 assertions in
-  tests/), which turned up a command injection through the Name prompt — a name of
+  tests/), which turned up a command injection through the Name prompt: a name of
   x;reboot ran `reboot` as root on the Proxmox host. Fixed, plus --resume, live
   service validation, tenant-wide name check, enforced OWNER, and the teardown
   journal is finally read. See "Fixed on 2026-09-02" in docs/HANDOFF.md.
-- 2026-09-02: built sholland-207/208/209 (dns), then added dhcp to all three.
+- 2026-09-02: built jsmith-207/208/209 (dns), then added dhcp to all three.
   Four hosts are live now: 203, 207, 208, 209, all dns+dhcp. Next VMID 210.
-  `./niosx add` was merging-not-replacing only after a fix — before it, adding
+  `./niosx add` was merging-not-replacing only after a fix. Before it, adding
   dhcp would have destroyed each host's running dns on the next apply.
-- 2026-09-02: the whole lifecycle re-verified on the CURRENT code with VM 206 —
+- 2026-09-02: the whole lifecycle re-verified on the CURRENT code with VM 206:
   deploy, register, rename off the ZTP name, tofu apply (dns up in 2m27s), then
   teardown, which destroyed exactly one service and left host 203's two alone.
 - 2026-09-02: --resume proven on real hardware. VM 205 was deliberately failed at
@@ -49,7 +49,7 @@ REMAINING WORK, most valuable first
 2. Nothing else is open. --resume, ./niosx add coverage, the tenant name check and
    the teardown journal were all finished and verified on 2026-09-02.
 
-HARD-WON FACTS — do not relearn these (all verified against the live API)
+HARD-WON FACTS. Do not relearn these (all verified against the live API)
 - NEVER set an SMBIOS serial. A made-up serial makes the appliance wait to be
   claimed as purchased hardware; it never uses the join token and never dials CSP,
   with no error anywhere. No serial = registers in ~100 seconds.

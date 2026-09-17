@@ -1,4 +1,4 @@
-# terraform/ — starts services on registered NIOS-X hosts
+# terraform/: starts services on registered NIOS-X hosts
 
 Normally you don't run this directly: `../niosx deploy` and
 `../niosx add` drive it for you.
@@ -35,7 +35,7 @@ to your machine, so it never touches anyone else's hosts).
 ## Notes
 
 - Requires OpenTofu (`tofu`). The lock file pins `registry.opentofu.org`.
-- Service names are `<label>-<service>`, e.g. `sholland-202-dns` — the label is
+- Service names are `<label>-<service>`, e.g. `jsmith-202-dns`. The label is
   the JSON key. Keep it unique; the CSP tenant is shared.
 - If an apply errors, the resource may be left **tainted** even though it was
   created. `tofu untaint '<address>'` rather than letting a re-apply destroy and

@@ -1,4 +1,4 @@
-# Handoff — NIOS-X on Proxmox tooling
+# Handoff: NIOS-X on Proxmox tooling
 
 Status as of 2026-09-02. Repo: https://github.com/holland-built/proxblox (public).
 
@@ -23,16 +23,16 @@ Another removes all of it. Aimed at ~700 sales engineers sharing one CSP tenant.
 
 | Path | Evidence |
 |------|----------|
-| Deploy → register → rename → services | VM 206 (`dns`) on the current code — registered, renamed from its ZTP name, recorded, service created in 2m27s. Earlier: VM 203 (`dns,dhcp`), VM 201 (`dns,ntp`) |
+| Deploy → register → rename → services | VM 206 (`dns`) on the current code: registered, renamed from its ZTP name, recorded, service created in 2m27s. Earlier: VM 203 (`dns,dhcp`), VM 201 (`dns,ntp`) |
 | Teardown, including service removal | VM 206 on the current code: `Resources: 0 added, 0 changed, 1 destroyed`. Earlier: VM 202 and VM 201 |
 | Blast-radius isolation | tearing 206 down destroyed exactly its own service and left 203's two, its VM, its Portal record and its state untouched |
 | Never-reuse VMIDs | counter at 206 after 201/202/204/205/206 retired |
 | **Interactive prompts + numbered menu** | 39 assertions in `tests/`, driven through a real pty |
 | **`--resume`** | VM 205, live: deploy failed at disk import, resume imported the disk, built and attached the seed, started it, and it registered in ~2 min; torn down clean afterwards |
 | **`./niosx add`** | live on VMs 207/208/209: added dhcp to hosts already running dns, `1 added, 0 changed, 0 destroyed` each time |
-| **`--no-wait` / `./niosx check`** | check run live against 207 — read Proxmox, the Portal and Terraform state, saw both services up, cleared its own record |
+| **`--no-wait` / `./niosx check`** | check run live against 207: read Proxmox, the Portal and Terraform state, saw both services up, cleared its own record |
 
-Currently live: `sholland-203` running DNS + DHCP (`./niosx list` for its IP).
+Currently live: `jsmith-203` running DNS + DHCP (`./niosx list` for its IP).
 
 ## Hard-won facts (do not relearn these)
 
@@ -47,16 +47,16 @@ Currently live: `sholland-203` running DNS + DHCP (`./niosx list` for its IP).
   "inconsistent result after apply".
 - **Hosts register under a generated name** `ZTP_<join-token-name>_<digits>`.
   Match hosts by MAC, not name. Name your join token after yourself.
-- **`/api/infra/v1/hosts` is not the full picture** — it returned 101 records
+- **`/api/infra/v1/hosts` is not the full picture.** It returned 101 records
   while `detail_hosts` returned 500+. Use `detail_hosts` with a server-side
   `_filter`, not client-side paging.
 - **A tainted resource after a failed apply** will be destroyed and recreated by
   the next apply. `tofu untaint` instead.
 - **`--purge` does not remove the seed ISO**, which contains the join token.
-- **A query that matches nothing returns a bare `{}`** — no `results` key at
+- **A query that matches nothing returns a bare `{}`.** There is no `results` key at
   all. Read as a failed lookup, teardown refuses to run on a host that is
   simply not registered. `results` missing = zero matches, not an error.
-- **Services are not in `detail_hosts[].configs`** — that only ever lists
+- **Services are not in `detail_hosts[].configs`.** That only ever lists
   `platform` and `appmgmt`. They live at `/api/infra/v1/services`, and refer to
   their host as `infra/host/<id>` while `detail_hosts` returns that id bare.
   Same prefixed-vs-bare trap as `pool_id`.
@@ -71,7 +71,7 @@ Currently live: `sholland-203` running DNS + DHCP (`./niosx list` for its IP).
 
 | Was | Now |
 |-----|-----|
-| A VM name went unvalidated and unquoted into `qm create` over ssh — `x;reboot` ran `reboot` as root on the Proxmox host | names are `[A-Za-z0-9-]`, checked before anything ships, and quoted in the remote command |
+| A VM name went unvalidated and unquoted into `qm create` over ssh; `x;reboot` ran `reboot` as root on the Proxmox host | names are `[A-Za-z0-9-]`, checked before anything ships, and quoted in the remote command |
 | `--services` was validated against a hardcoded 2026-09-02 snapshot | validated against the live tenant; the snapshot is a labelled fallback |
 | The host name was only unique by convention | checked against the tenant before the build; a clash refuses |
 | `OWNER` uniqueness was documented, not enforced | generic and malformed values are refused |
@@ -107,10 +107,10 @@ Currently live: `sholland-203` running DNS + DHCP (`./niosx list` for its IP).
 | `~/.config/niosx/pending/<vmid>.json` | a node built with `--no-wait`, not yet finished |
 | `scripts/lib.sh` | shared validators (names, VMIDs, OWNER, CRLF) |
 | `tests/` | stubbed suite; `./niosx test` |
-| `NIOSX_HOSTS_JSON` | points this script *and* Terraform (`TF_VAR_hosts_file`) at one hosts file — used by the tests |
+| `NIOSX_HOSTS_JSON` | points this script *and* Terraform (`TF_VAR_hosts_file`) at one hosts file, used by the tests |
 
 ## If you pick this up
 
-Start with `./niosx test` — 30 seconds, proves the tooling still works without
+Start with `./niosx test`: 30 seconds, proves the tooling still works without
 touching anything. Then `./niosx list`, which shows whether Proxmox, the Portal
 and Terraform agree. Always `--dry-run` a teardown first.

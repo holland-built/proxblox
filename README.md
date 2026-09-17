@@ -23,7 +23,11 @@ pick. It takes 5 to 10 minutes and you never log in to a console.
 
 ## Quick start
 
-1. Install `ssh`, `rsync`, `curl`, `python3` and [OpenTofu](https://opentofu.org). On a Mac: `brew install opentofu`.
+1. Download the NIOS-X On-Prem qcow2 image from the Infoblox Portal. Then install `ssh`, `rsync`, `curl`, `python3` and [OpenTofu](https://opentofu.org):
+   ```bash
+   # on a Mac, install OpenTofu with Homebrew (Linux and WSL2: see the Windows section below)
+   brew install opentofu
+   ```
 2. Copy the settings file and fill in `OWNER`, `PVE`, `IMG`, `POOL` and `BRIDGE`:
    ```bash
    # make your own copy of the settings file, then open it to edit
@@ -231,7 +235,7 @@ If a deploy dies after the VM exists, `./niosx list` shows it and flags a VM
 with no join seed (it will never register on its own):
 
 ```
-  250    sholland-250    aa:bb:cc:dd:ee:ff   stopped   <- no join seed: ./niosx deploy --resume 250
+  250    jsmith-250    aa:bb:cc:dd:ee:ff   stopped   <- no join seed: ./niosx deploy --resume 250
 ```
 
 ```bash

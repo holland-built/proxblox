@@ -1,10 +1,10 @@
 # macOS
 .DS_Store
 
-# Local environment (real hosts/IPs) — the .example template IS committed
+# Local environment (real hosts/IPs). The .example template IS committed
 config.env
 
-# Never commit secrets — join token lives at ~/.config/niosx/jointoken,
+# Never commit secrets. The join token lives at ~/.config/niosx/jointoken,
 # CSP API key in terraform/secrets.auto.tfvars (see terraform/.gitignore)
 *jointoken*
 *.ibjt
@@ -16,3 +16,7 @@ tmp/
 # Python bytecode from the test suite
 __pycache__/
 *.pyc
+
+# Editor and agent folders
+.claude/settings.local.json
+.orca/

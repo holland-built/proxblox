@@ -25,7 +25,7 @@ NIOS-X on Proxmox.
   ./niosx add <vmid> <host-name> <services>
         Add services to a host that already exists — services it is already
         running are kept. e.g.
-        ./niosx add 205 sholland-205 dhcp
+        ./niosx add 205 jsmith-205 dhcp
 
   ./niosx teardown <vmid> [--dry-run]
         Destroy one node: its services, its Portal host, its VM and its

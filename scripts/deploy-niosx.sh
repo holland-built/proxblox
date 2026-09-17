@@ -46,7 +46,7 @@ Portal, rename it, and start the services you pick. ~5-10 min, no console.
   -h, --help        this text
 
   VMID        default: next id from a never-reuse counter (delete 203 -> next 205)
-  NAME        default: <OWNER>-<VMID>, e.g. sholland-203
+  NAME        default: <OWNER>-<VMID>, e.g. jsmith-203
   JOINTOKEN   default: the stored token file
 
 Setup (see README)
